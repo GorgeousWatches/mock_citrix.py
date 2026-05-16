@@ -1,0 +1,25 @@
+import socket
+
+def start_server():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(('0.0.0.0', 80))
+    server.listen(5)
+    print("[*] Mock Citrix NetScaler listening on port 80...")
+
+    while True:
+        client, addr = server.accept()
+        request = client.recv(4096).decode('utf-8', errors='ignore')
+        
+        if "Host: " in request and len(request.split("Host: ")[1].split("\r\n")[0]) > 100:
+            print(f"[!] Buffer Over-read triggered by {addr}!")
+            response = "HTTP/1.1 200 OK\r\n\r\n" + "a" * 120 + "aaa_session_cookie=b3BlbnNlc2FtZQ==; " + "a" * 50
+        else:
+            response = "HTTP/1.1 200 OK\r\n\r\nWelcome to Citrix Gateway."
+            
+        client.send(response.encode())
+        client.close()
+
+if __name__ == "__main__":
+    start_server()
+EOF
