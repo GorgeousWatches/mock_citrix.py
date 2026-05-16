@@ -1,0 +1,51 @@
+import socket
+
+def start_server():
+    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    server.bind(('0.0.0.0', 80))
+    server.listen(5)
+    print("[*] Mock Citrix NetScaler listening on port 80...")
+
+    while True:
+        client, addr = server.accept()
+        
+        # Read the initial chunk to check the header
+        request = client.recv(4096).decode('utf-8', errors='ignore')
+        
+        # Check if it triggers the simulated condition
+        if "Host: " in request and len(request.split("Host: ")[1].split("\r\n")[0]) > 100:
+            print("[!] Buffer Over-read triggered by {}!".format(addr))
+            
+            # Keep reading remaining data from Kali until the headers end (\r\n\r\n)
+            # This prevents the Connection Reset error
+            while "\r\n\r\n" not in request and len(request) < 30000:
+                chunk = client.recv(4096).decode('utf-8', errors='ignore')
+                if not chunk:
+                    break
+                request += chunk
+
+            # Build a structurally sound HTTP response
+            body = "a" * 120 + "aaa_session_cookie=b3BlbnNlc2FtZQ==; " + "a" * 50
+            response = (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: text/plain\r\n"
+                "Content-Length: {}\r\n"
+                "Connection: close\r\n\r\n"
+                "{}"
+            ).format(len(body), body)
+        else:
+            body = "Welcome to Citrix Gateway."
+            response = (
+                "HTTP/1.1 200 OK\r\n"
+                "Content-Type: text/plain\r\n"
+                "Content-Length: {}\r\n"
+                "Connection: close\r\n\r\n"
+                "{}"
+            ).format(len(body), body)
+            
+        client.sendall(response.encode())
+        client.close()
+
+if __name__ == "__main__":
+    start_server()
