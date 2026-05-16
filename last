@@ -1,0 +1,13 @@
+C:\Windows\System32\wbem> cd C:\Windows\Sysnative
+ 
+C:\Windows\Sysnative> vssadmin.exe Delete Shadows /All /Quiet
+vssadmin 1.1 - Volume Shadow Copy Service administrative command-line tool
+(C) Copyright 2001-2005 Microsoft Corp.
+
+No items found that satisfy the query.
+
+C:\Windows\Sysnative> wmic.exe shadowcopy delete
+ERROR:
+Description = Initialization failure
+
+C:\Windows\Sysnative> 
